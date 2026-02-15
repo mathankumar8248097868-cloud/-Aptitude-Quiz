@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Smart Aptitude Quiz</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+:root {
+  --primary:#7c7cff;
+  --bg:radial-gradient(1200px 600px at 10% 10%, #1b2a4e, #0f172a);
+  --card:rgba(255,255,255,0.92);
+  --ok:#22c55e;
+  --bad:#ef4444;
+  --quant:#3b82f6;
+  --logic:#f59e0b;
+  --di:#10b981;
+}
+*{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+body{margin:0;min-height:100vh;background:var(--bg);display:grid;place-items:center}
+.card{width:95%;max-width:820px;background:var(--card);border-radius:18px;padding:22px;box-shadow:0 30px 60px rgba(0,0,0,.35)}
+.header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800}
+.timer{font-weight:800;color:#ef4444}
+.progress{height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:14px 0}
+.bar{height:100%;width:0%;background:linear-gradient(90deg,#7c7cff,#22d3ee);transition:.3s}
+.q-meta{display:flex;justify-content:space-between;font-weight:700}
+.question{font-size:20px;margin:12px 0}
+.options{display:grid;gap:10px}
+.opt{border:2px solid #e5e7eb;border-radius:12px;padding:12px;cursor:pointer;background:#fff;transition:.15s}
+.opt:hover{transform:translateY(-1px);box-shadow:0 10px 18px rgba(0,0,0,.08)}
+.correct{border-color:var(--ok);background:#ecfdf5}
+.wrong{border-color:var(--bad);background:#fef2f2}
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-weight:800;background:#7c7cff;color:#fff;cursor:pointer}
+.btn:disabled{background:#c7c7ff;cursor:not-allowed}
+.center{text-align:center}
+.big{font-size:42px;font-weight:900}
+.pill{padding:6px 10px;border-radius:999px;color:#fff;font-weight:700;font-size:12px}
+.quant{background:var(--quant)} .logic{background:var(--logic)} .di{background:var(--di)}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+<div id="start" class="center">
+  <h1>🧠 Smart Aptitude Quiz</h1>
+  <p>25 Questions • 60s per question • Instant Feedback</p>
+  <button class="btn" onclick="startQuiz()">🚀 Start Quiz</button>
+</div>
+
+<div id="quiz" style="display:none">
+  <div class="header">
+    <div class="brand">🧠 Smart Aptitude</div>
+    <div id="topicPill" class="pill quant">📐 Quant</div>
+    <div class="timer">⏱️ <span id="timer">60</span>s</div>
+  </div>
+
+  <div class="progress"><div id="bar" class="bar"></div></div>
+
+  <div class="q-meta">
+    <div id="qCount">Q 1 / 25</div>
+    <div>Score: <span id="score">0</span></div>
+  </div>
+
+  <div id="question" class="question"></div>
+  <div id="options" class="options"></div>
+
+  <div class="footer">
+    <div></div>
+    <button id="nextBtn" class="btn" onclick="nextQ()" disabled>Next ➡️</button>
+  </div>
+</div>
+
+<div id="result" class="center" style="display:none">
+  <h2>🎉 Quiz Completed!</h2>
+  <div class="big"><span id="finalScore"></span> / 25</div>
+  <button class="btn" onclick="location.reload()">🔁 Restart</button>
+</div>
+
+</div>
+
+<script>
+const quizData = [
+  {t:"quant",q:"20% of a number is 60. Find the number.",o:["200","250","300","350"],a:"300"},
+  {t:"quant",q:"Average of 10,20,30 and x is 25. Find x.",o:["30","35","40","45"],a:"40"},
+  {t:"quant",q:"CP=800, profit=25%. SP?",o:["900","950","1000","1100"],a:"1000"},
+  {t:"quant",q:"150 km in 3 hours. Speed?",o:["40","45","50","60"],a:"50"},
+  {t:"quant",q:"Boys:Girls=2:3, total 50. Girls?",o:["20","25","30","35"],a:"30"},
+  {t:"quant",q:"LCM of 12 & 18?",o:["24","36","48","54"],a:"36"},
+  {t:"quant",q:"SI on 2000 at 5% for 2 years?",o:["100","150","200","250"],a:"200"},
+  {t:"quant",q:"18% of 250?",o:["40","45","50","55"],a:"45"},
+  {t:"quant",q:"x + 7 = 20. x = ?",o:["10","11","12","13"],a:"13"},
+  {t:"quant",q:"A in 10 days, B in 15 days. Together?",o:["5","6","7.5","8"],a:"6"},
+
+  {t:"logic",q:"Odd one out: 3, 9, 27, 81, 100",o:["3","9","81","100"],a:"100"},
+  {t:"logic",q:"Next number: 2,6,12,20, ?",o:["28","30","32","36"],a:"30"},
+  {t:"logic",q:"SOUTH → TPVUI. NORTH → ?",o:["OPSUJ","OPTVJ","OPSVJ","OPSWJ"],a:"OPTVJ"},
+  {t:"logic",q:"A>B and A<C. Tallest?",o:["A","B","C","Cannot say"],a:"C"},
+  {t:"logic",q:"All roses are flowers. Some flowers are red. Are all roses red?",o:["Yes","No","Cannot say","Only roses are red"],a:"Cannot say"},
+  {t:"logic",q:"Odd one: Dog, Cat, Tiger, Cow",o:["Dog","Cat","Tiger","Cow"],a:"Tiger"},
+  {t:"logic",q:"5,10,20,40, ?",o:["60","70","80","90"],a:"80"},
+  {t:"logic",q:"Yesterday was Thursday. Day after tomorrow?",o:["Friday","Saturday","Sunday","Monday"],a:"Saturday"},
+  {t:"logic",q:"CAT → DBU. DOG → ?",o:["EPH","EOH","FPH","EPG"],a:"EPH"},
+  {t:"logic",q:"2+3=13, 3+4=25, 4+5=?",o:["41","45","49","54"],a:"41"},
+
+  {t:"di",q:"Sales Jan=50, Feb=60, Mar=70. Average?",o:["55","60","65","70"],a:"60"},
+  {t:"di",q:"Price 100 → 120. % increase?",o:["10%","15%","20%","25%"],a:"20%"},
+  {t:"di",q:"Class A=40, B=60. % in A?",o:["30%","35%","40%","45%"],a:"40%"},
+  {t:"di",q:"Revenue 5000, Expenses 3500. Profit?",o:["1000","1500","2000","2500"],a:"1500"},
+  {t:"di",q:"Petrol:Diesel = 3:2, total 500L. Petrol?",o:["200","250","300","350"],a:"300"}
+];
+
+let i=0, score=0, time=60, timer;
+
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+
+function startQuiz(){
+  shuffle(quizData);
+  document.getElementById("start").style.display="none";
+  document.getElementById("quiz").style.display="block";
+  loadQ();
+}
+
+function startTimer(){
+  clearInterval(timer);
+  time=60;
+  timer=setInterval(()=>{
+    document.getElementById("timer").textContent=--time;
+    if(time<=0) nextQ();
+  },1000);
+}
+
+function loadQ(){
+  startTimer();
+  const q=quizData[i];
+  document.getElementById("qCount").textContent=`Q ${i+1} / 25`;
+  document.getElementById("question").textContent=q.q;
+  document.getElementById("bar").style.width=((i+1)/25*100)+"%";
+
+  const pill=document.getElementById("topicPill");
+  pill.className="pill "+q.t;
+  pill.textContent=q.t==="quant"?"📐 Quant":q.t==="logic"?"🧩 Logic":"📊 DI";
+
+  const opts=[...q.o]; shuffle(opts);
+  const box=document.getElementById("options"); box.innerHTML="";
+  opts.forEach(v=>{
+    const d=document.createElement("div");
+    d.className="opt";
+    d.textContent=v;
+    d.onclick=()=>answer(d,v,q.a);
+    box.appendChild(d);
+  });
+  document.getElementById("nextBtn").disabled=true;
+}
+
+function answer(el,val,correct){
+  document.querySelectorAll(".opt").forEach(o=>o.style.pointerEvents="none");
+  if(val===correct){el.classList.add("correct"); score++;}
+  else{
+    el.classList.add("wrong");
+    document.querySelectorAll(".opt").forEach(o=>{
+      if(o.textContent===correct) o.classList.add("correct");
+    });
+  }
+  document.getElementById("score").textContent=score;
+  document.getElementById("nextBtn").disabled=false;
+}
+
+function nextQ(){
+  clearInterval(timer);
+  i++;
+  i<25 ? loadQ() : finish();
+}
+
+function finish(){
+  document.getElementById("quiz").style.display="none";
+  document.getElementById("result").style.display="block";
+  document.getElementById("finalScore").textContent=score;
+}
+</script>
+
+</body>
+</html>
